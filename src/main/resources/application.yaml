@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: springai
+  threads:
+    virtual:
+      enabled: true
+  ai:
+    ollama:
+      baseUrl: "http://localhost:11434"
+      embedding:
+        model: "nomic-embed-text"
+      chat:
+        model: "llama3.1:latest"
+        options:
+          model: "llama3.1:latest"
+          temperature: 0.3
+          top-k: 2
+          top-p: 0.2
+          num-g-p-u: 1
+#        options:
+#          model: "nomic-embed-text"
+    vectorstore:
+      redis:
+        uri: "redis://localhost:6379"
+        initialize-schema: true
+        embeddingDimension: 768
+#  ai:
+#    vectorstore:
+#      milvus:
+#        client:
+#          host: localhost
+#          port: 19530
+#          uri: "http://localhost:19530"
+#        embeddingDimension: 768
+#        databaseName: "default"
+#        collectionName: "DPE"
+#        indexType: IVF_FLAT
+#        metricType: COSINE
+#        initializeSchema: true
+#        index-parameters: "nlist=1024"
