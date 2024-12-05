@@ -12,8 +12,8 @@ class RagServiceTest {
     private RagService ragService;
     @Test
     public void test() {
-        String csc_狀態查詢 = ragService.findAnswer("請找出CSC 狀態查詢的api規格");
+        String answer = ragService.findAnswer("how to find all stations?");
 
-        log.info("Answer: {}", csc_狀態查詢);
+        log.info("Answer: {}", answer);
     }
 }

@@ -11,15 +11,21 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 public class EmbeddingService {
-  @Value("classpath:test.md")
+  @Value("classpath:test.nk")
   private Resource mdResource;
 
   @Autowired private VectorStore vectorStore;
+
+  @Autowired
+  private ResourceLoader resourceLoader;
 
   public void embed(String text) {
     TokenTextSplitter splitter = new TokenTextSplitter();
@@ -28,7 +34,34 @@ public class EmbeddingService {
   }
 
   public void loadData() {
-    DocumentReader reader = new MarkdownDocumentReader(mdResource, MarkdownDocumentReaderConfig.builder()
+    // Resource resource =
+
+    ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(this.resourceLoader);
+
+      try {
+        Resource[] resources = resolver.getResources("classpath*:*.md");
+        log.info("Resources: {}", resources.length);
+
+        for (Resource resource : resources) {
+            log.info("Resource: {}", resource.getURL());
+            DocumentReader reader = new MarkdownDocumentReader(resource, MarkdownDocumentReaderConfig.builder()
+                .withIncludeCodeBlock(true)
+                .withIncludeBlockquote(true)
+                .build());
+
+            TokenTextSplitter splitter = new TokenTextSplitter();
+            this.vectorStore.accept(splitter.split(reader.read()));
+        }
+      } catch (Exception e) {
+        log.error("Error: {}", e.getMessage());
+          throw new RuntimeException(e);
+      }
+
+
+  }
+
+  public void exportToEmbedding(Resource resource) {
+    DocumentReader reader = new MarkdownDocumentReader(resource, MarkdownDocumentReaderConfig.builder()
         .withIncludeCodeBlock(true)
         .withIncludeBlockquote(true)
         .build());
@@ -40,3 +73,4 @@ public class EmbeddingService {
     log.info("Embedding MD is exist?: {}", mdResource.exists());
   }
 }
+

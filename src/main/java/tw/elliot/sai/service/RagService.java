@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.ChatClient.CallResponseSpec;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
@@ -20,33 +22,31 @@ import org.springframework.stereotype.Service;
 public class RagService {
 
     @Autowired
-    private VectorStore vectorStore;
+    ChatClient chatClient;
 
-    @Autowired
-    private ChatModel chatModel;
 
     public String findAnswer(String query) {
-        Message ragDoc = this.getRagDoc(query);
-        List<Message> messages = List.of(
-            ragDoc, new UserMessage(query));
-        ChatResponse aiResponse = chatModel.call(new Prompt(messages));
+        CallResponseSpec call = chatClient
+            .prompt("You are a software engineer, you will find the suitable api specification for question.")
+            .user(query)
+            .call();
 
-        return aiResponse.getResult().getOutput().getContent();
+        return call.content();
     }
-    public Message getRagDoc(String query) {
-        log.info("Query: {}", query);
-        List<Document> documents = this.vectorStore.similaritySearch(query);
-        log.info("Documents: size[{}]", documents.size());
-
-        String collect = documents
-            .stream()
-            .map(Document::getContent)
-            .collect(Collectors.joining("\n"));
-
-        log.info("Collect: {}", collect);
-        SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(query);
-
-
-        return systemPromptTemplate.createMessage(Map.of("documents", collect));
-    }
+//    public Message getRagDoc(String query) {
+//        log.info("Query: {}", query);
+//        List<Document> documents = this.vectorStore.similaritySearch(query);
+//        log.info("Documents: size[{}]", documents.size());
+//
+//        String collect = documents
+//            .stream()
+//            .map(Document::getContent)
+//            .collect(Collectors.joining("\n"));
+//
+//        log.info("Collect: {}", collect);
+//        SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(query);
+//
+//
+//        return systemPromptTemplate.createMessage(Map.of("documents", collect));
+//    }
 }
