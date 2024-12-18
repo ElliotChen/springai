@@ -1,5 +1,6 @@
 package tw.elliot.sai.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
@@ -33,17 +34,25 @@ public class EmbeddingService {
     vectorStore.add(split);
   }
 
-  public void loadData() {
+  public List<String> loadProvidedData() {
+    return this.loadData("classpath:/tmp/*.md");
+  }
+  public List<String> loadDefaultData() {
+    return this.loadData("classpath:*.md");
+  }
+  public List<String> loadData(String resourcePath) {
     // Resource resource =
 
     ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(this.resourceLoader);
-
+    ArrayList<String> list = new ArrayList<>();
+    Resource[] resources;
       try {
-        Resource[] resources = resolver.getResources("classpath*:*.md");
+        resources = resolver.getResources(resourcePath);
         log.info("Resources: {}", resources.length);
 
         for (Resource resource : resources) {
             log.info("Resource: {}", resource.getURL());
+          list.add(resource.getURL().toString());
             DocumentReader reader = new MarkdownDocumentReader(resource, MarkdownDocumentReaderConfig.builder()
                 .withIncludeCodeBlock(true)
                 .withIncludeBlockquote(true)
@@ -56,6 +65,8 @@ public class EmbeddingService {
         log.error("Error: {}", e.getMessage());
           throw new RuntimeException(e);
       }
+
+      return list;
 
 
   }

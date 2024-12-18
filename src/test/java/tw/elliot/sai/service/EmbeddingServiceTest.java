@@ -12,6 +12,6 @@ class EmbeddingServiceTest {
 
     @Test
     public void testLoadMd() {
-        embeddingService.loadData();
+        embeddingService.loadDefaultData();
     }
 }

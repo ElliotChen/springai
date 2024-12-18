@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>問題回答介面</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+    }
+    #questionInput {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    #submitButton {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #response {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      min-height: 100px;
+    }
+  </style>
+</head>
+<body>
+<h1>RAG</h1>
+<input type="text" id="questionInput" placeholder="請輸入您的問題">
+<button id="submitButton">傳送問題</button>
+<div id="response">回答將顯示在此處</div>
+<button id="loadDataButtonId">資料載入</button>
+
+<script>
+  document.getElementById('submitButton').addEventListener('click', function() {
+    const questionInput = document.getElementById('questionInput');
+    const responseDiv = document.getElementById('response');
+
+    // 檢查是否有輸入問題
+    if (!questionInput.value.trim()) {
+      responseDiv.textContent = '請輸入問題';
+      return;
+    }
+
+    // 顯示載入中狀態
+    responseDiv.textContent = '載入中...';
+
+    // 發送POST請求
+    fetch('http://localhost:8080/ai/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        question: questionInput.value
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('網路回應異常');
+      }
+      return response.json();
+    })
+    .then(data => {
+      // 假設回應中有 answer 欄位
+      responseDiv.textContent = data.answer || '未收到回答';
+    })
+    .catch(error => {
+      console.error('錯誤:', error);
+      responseDiv.textContent = '伺服器連線發生錯誤：' + error.message;
+    });
+  });
+
+  document.getElementById('loadDataButtonId').addEventListener('click', function() {
+    const responseDiv = document.getElementById('response');
+
+    // 顯示載入中狀態
+    responseDiv.textContent = '載入中...';
+
+    // 發送POST請求
+    fetch('http://localhost:8080/ai/loadData', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('網路回應異常');
+      }
+      return response.json();
+    })
+    .then(data => {
+      // 假設回應中有 answer 欄位
+      responseDiv.textContent = data || '未收到回答';
+    })
+    .catch(error => {
+      console.error('錯誤:', error);
+      responseDiv.textContent = '伺服器連線發生錯誤：' + error.message;
+    });
+  });
+</script>
+</body>
+</html>
