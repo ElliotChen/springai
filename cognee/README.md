@@ -8,6 +8,8 @@
 
 從頭試了一次，確定能用，而且在特定條件下，不用修改就能完成，嗯，在我自己的GraphRAG的效果不夠好的情形下，這應該是個好選擇。
 
+實際檔案可以參考 [Github Elliot SpringAI/Cognee](https://github.com/ElliotChen/springai/tree/master/cognee)
+
 ## 準備
 
 需要會的幾件事
@@ -26,58 +28,134 @@
 
 ![Screenshot 2025-06-09 at 11.43.18](https://picgo.ap-south-1.linodeobjects.com/2025069/61f11ffea0693441e569109a925a305d.png)
 
-### docker compose file
+## Docker Compose Components
 
-#### docker-compose.yml
+### Cognee MCP
 
-### config
+主要注意的
 
-#### cognee
+1. *.env*:  Cognee的設定檔，用volume方式掛入
+2. *docs*: 要滙入Graph RAG的文件，存放於此，也是用volume掛入，要變更檔案較為容易
+3. *stdin_open: true*: 這設定加入後，讓docker外的系統可以用```docker attach $container```連到這個mcp server
 
-1. .env
-   ```
-   ENV="local"
-   
-   # LLM Configuration
-   LLM_API_KEY="1234"
-   LLM_MODEL="Mistral-Small-3.1:latest"
-   LLM_PROVIDER="ollama"
-   LLM_ENDPOINT="http://host.docker.internal:11434/v1"
-   LLM_API_VERSION="v1"
-   LLM_MAX_TOKENS="128000"
-   LLM_STREAMING="true"
-   
-   # Embedding Configuration
-   EMBEDDING_PROVIDER="ollama"
-   EMBEDDING_API_KEY="123"
-   EMBEDDING_MODEL="nomic-embed-text:v1.5"
-   EMBEDDING_ENDPOINT="http://host.docker.internal:11434/api/embeddings"
-   EMBEDDING_API_VERSION=""
-   EMBEDDING_DIMENSIONS=768
-   EMBEDDING_MAX_TOKENS=8192
-   HUGGINGFACE_TOKENIZER="nomic-ai/nomic-embed-text-v1.5"
-   
-   # "neo4j", "networkx", "kuzu" or "memgraph"
-   GRAPH_DATABASE_PROVIDER="neo4j"
-   GRAPH_DATABASE_URL=neo4j://neo4j:7687
-   GRAPH_DATABASE_USERNAME=neo4j
-   GRAPH_DATABASE_PASSWORD=jjjjjjjj
-   
-   # "qdrant", "pgvector", "weaviate", "milvus", "lancedb" or "chromadb"
-   VECTOR_DB_PROVIDER="pgvector"
-   
-   # Relational Database provider "sqlite" or "postgres"
-   DB_PROVIDER="postgres"
-   
-   # Database name
-   DB_NAME=cognee
-   
-   # Postgres specific parameters (Only if Postgres or PGVector is used). Do not use for cognee default simplest setup of SQLite-NetworkX-LanceDB
-   DB_HOST=postgres
-   DB_PORT=5432
-   DB_USERNAME=postgres
-   DB_PASSWORD=postgres
-   ```
+### Postgres: pgvector:17
 
-   
+儲存embedding後的資料
 
+### Neo4j
+
+儲存graph data 
+
+
+
+## Cognee Configuration
+
+在```config/cognee/.env```裡設定LLM，DB的相關資料。
+
+
+
+## Python
+
+### fastmcp_rag.py
+
+```import asyncio
+from fastmcp import Client
+## 使用docker attach來接入stdio
+config = {
+        'mcpServers': {
+            "cognee": {
+                "command": "docker",
+                "args": ["attach", "cognee"],
+                "env": {}
+            }
+        }
+    }
+
+client = Client(config)
+
+async def main():
+	## Trigger cognee 分析/app/docs/目錄下所有檔案
+	async with client:
+		await client.call_tool("cognify",{"data":"/app/docs/"})
+		await client.close()
+    	
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+執行方式為
+
+```
+uv run fastmcp_rag.py
+```
+
+在看到docker 裡的cognee動起來後
+
+```
+2025-06-09T03:07:34.916903 [info     ] Coroutine task started: `extract_graph_from_data` [run_tasks_base]
+2025-06-09T03:07:35.240984 [info     ] Model not found in LiteLLM's model_cost. [cognee.shared.logging_utils]
+HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions⁠ "HTTP/1.1 200 OK"
+HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions⁠ "HTTP/1.1 200 OK"
+2025-06-09T03:11:00.470900 [info     ] Model not found in LiteLLM's model_cost. [cognee.shared.logging_utils]
+HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions⁠ "HTTP/1.1 200 OK"
+...
+```
+
+登入Neo4j可以看到相關的node結構與資料
+
+![Screenshot 2025-06-09 at 11.15.15](https://picgo.ap-south-1.linodeobjects.com/2025069/1f86554b6f3e9e2375bd2a3dddabd042.png)
+
+要快速確認可以用python來看查詢回應，範例如下
+
+```
+import asyncio
+from fastmcp import Client
+
+config = {
+        'mcpServers': {
+            "cognee": {
+                "command": "docker",
+                "args": ["attach", "cognee"],
+                "env": {}
+            }
+        }
+    }
+
+client = Client(config)
+
+async def main():
+	## 執行查詢
+    async with client:
+        search_result = await client.call_tool("search",{"search_query": "markdown", "search_type": "RAG_COMPLETION"})
+        print(f"Available tools: {search_result}")
+        await client.close()
+        
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+一樣用uv執行
+
+```
+> uv run ./fastmcp_search.py
+
+Processing request of type CallToolRequest
+2025-06-09T03:28:42.878087 [info     ] Model not found in LiteLLM's model_cost. [cognee.shared.logging_utils]
+HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions "HTTP/1.1 200 OK"Available tools: [TextContent(type='text', text='Markdown is a lightweight markup language used for formatting text.', annotations=None)]
+```
+
+
+
+## LLM 使用
+
+然後在要用的ui去設定mcp，你的agent或tool就能使用graph rag！！！
+
+![Screenshot 2025-06-09 at 12.14.37](https://picgo.ap-south-1.linodeobjects.com/2025069/a01dbe9f86a8cab3c0a75324bca92f72.png)
+
+
+
+## 題外話
+
+要設定OpenAI，Claude之外的LLM與Embedding Model會有很多問題，例如想接llama.cpp，會有一堆想到不的情形，最快是改source code，但最後卡在embedding size裡...
