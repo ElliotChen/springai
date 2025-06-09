@@ -1,0 +1,91 @@
+services:
+  postgres:
+    container_name: postgres
+    image: pgvector/pgvector:pg17
+    environment:
+      - POSTGRES_DB=cognee
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres/data:/var/lib/postgresql/data
+      - ./data/postgres/bak:/var/lib/postgresql/bak
+      - ./config/postgres/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # postgres_mcp:
+  #   container_name: postgresmcp
+  #   image: mcp/postgres
+  #   command: [ "postgresql://postgres:postgres@postgres:5432/mcp" ]
+  #   stdin_open: true
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+
+  # file_mcp:
+  #   container_name: filemcp
+  #   image: mcp/filesystem
+  #   command: "/projects"
+  #   volumes:
+  #     - ./data/filesystem/projects/docs:/projects/docs
+  #   stdin_open: true
+  #extra_hosts:
+    #  - host.docker.internal:host-gateway
+
+  # context7_mcp:
+  #   container_name: context7
+  #   image: mcp/context7:latest
+  #   stdin_open: true
+
+  # seqthink_mcp:
+  #   container_name: seqthink
+  #   image: mcp/sequentialthinking:latest
+  #   stdin_open: true
+
+  cognee_mcp:
+    container_name: cognee
+    image: cognee/cognee-mcp:latest
+    volumes:
+      - ./config/cognee/.env:/app/.env
+      - ./data/cognee/docs/:/app/docs/
+      #- ./data/cognee/.venv/:/app/.venv/
+    environment:
+      - HOST=0.0.0.0
+      - ENVIRONMENT=local
+      #- PYTHONPATH=/usr/local/bin
+      #- DEBUG=false
+      #- MCP_LOG_LEVEL=DEBUG
+      #- LOG_LEVEL=DEBUG
+      #- PYDEVD_DISABLE_FILE_VALIDATION=1
+      #- PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/app/.venv/bin
+    #ports:
+      #- "8000:8000"
+      #- "5173:5173"
+    stdin_open: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j
+    user: neo4j:neo4j
+    environment:
+      - NEO4J_AUTH=neo4j/jjjjjjjj
+      - NEO4J_dbms_security_procedures_unrestricted=gds.*,apoc.*
+      - NEO4J_dbms_security_procedures_allowlist=apoc.*,gds.*
+      - NEO4J_PLUGINS=["apoc"] #graph-data-science
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      #- ./config/neo4j/config/neo4j.conf:/var/lib/neo4j/conf/neo4j.conf
+      - ./data/neo4j/data:/data
+      - ./data/neo4j/logs:/logs
+      - ./data/neo4j/plugins:/plugins
+      - ./data/neo4j/import:/import

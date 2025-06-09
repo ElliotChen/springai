@@ -1,0 +1,71 @@
+### 主題 
+台中到新竹去回程
+去程早鳥YA
+回程早鳥YA
+人數2
+身份別成人
+
+### API內容
+```json
+POST https://reservation-command-dev-aors-ams.apps.aors-uat.uatapat.com.tw/create-pnr
+X-AORS-Channel-Id: S000ETS00IOS00000000000000003INTETS
+X-AORS-Request-Id: 2255253e-6f70-4c56-b7d0-11f4ae6a9455
+Agent-Id: 2900201102
+Content-Type: application/json
+
+{
+  "pnrType": "INDIVIDUAL",
+  "contact": {
+    "pid": {
+      "pid": "D235538497",
+      "pidType": "OTHER"
+    }
+  },
+  "itinerary": {
+    "trainSegments": [
+      {
+        "segmentRefId": "c5e6c22e-920f-4368-ad15-d2ae145eaaee",
+        "trainNumber": "0818",
+        "departureStation": "TAC",
+        "arrivalStation": "HSC",
+        "departureDateTime": "2025-03-26T06:30:00+08:00"
+      }
+    ]
+  },
+  "travelers": [
+    {
+    	 "loyaltyNumber":{"loyaltyNo":"BC01909093","membershipCode":"TGO"},
+	 "pid":{"pid":"D235538497","pidType":"OTHER"},
+      "assignments": [
+        {
+          "segmentRefId": "c5e6c22e-920f-4368-ad15-d2ae145eaaee",
+          "profileCode": "F",
+          "classCode": "YA",
+          "promotionCode": null
+        }
+      ],
+      "travelerRefId": "e86a6c2a-dff7-4db0-9a53-e348ea35a6ff"
+    },
+    {
+    	 "loyaltyNumber":{"loyaltyNo":"BC01909094","membershipCode":"TGO"},
+	 "pid":{"pid":"A123123123","pidType":"OTHER"},
+      "assignments": [
+        {
+          "segmentRefId": "c5e6c22e-920f-4368-ad15-d2ae145eaaee",
+          "profileCode": "F",
+          "classCode": "YA",
+          "promotionCode": null
+        }
+      ],
+      "travelerRefId": "32cb2b1b-139a-4479-a79b-92e7f9a6e738"
+    }
+  ],
+  "sendingRule": {
+    "emailStatus": "N",
+    "smsStatus": "N",
+    "language": "zh"
+  },
+  "language": "TW"
+}
+
+```
