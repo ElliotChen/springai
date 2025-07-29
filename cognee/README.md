@@ -159,3 +159,55 @@ HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions "HTTP/1
 ## 題外話
 
 要設定OpenAI，Claude之外的LLM與Embedding Model會有很多問題，例如想接llama.cpp，會有一堆想到不的情形，最快是改source code，但最後卡在embedding size裡...
+
+
+
+## 2025/07/29 Update
+
+為了更精簡地使用System resource, 我傾向使用llama.cpp而不是ollama，但付出的代價是多數的工具皆需要調整，雖說llama.cpp有提供了OpenAI Competed API，但不是全部，有些跟embedding, last answer等又不全部相同，所以在設定上需要花費不少功夫，甚至需要修改source，但有個好消息是愈來愈多的工具都採用了LittleLLM的lib，也許在最終也會步入統一吧。
+
+在最近的變更，已經可以僅變更設定而不用改程式了，所以，可喜可賀，但embedding的部份在可以的情形下，還是用ollama來做，不然很容易遇到莫明的問題。
+
+### Llama.cpp
+
+```bash
+llama-server --flash-attn --jinja -m /Users/elliot/llm/gguf/mistralai/Devstral/Devstral-Small-2507-Q8_0.gguf -c 0 --log-file ./llama_devstral.log;
+```
+
+### Ollama - Embedding
+
+```
+# 將embed model自hugging face下載
+ollama pull hf.co/nomic-ai/nomic-embed-text-v2-moe-gguf
+# 改名
+ollama cp hf.co/nomic-ai/nomic-embed-text-v2-moe-gguf nomic-embed-text-v2
+# 讓ollama load embedding model，並且不要自行關閉
+curl http://localhost:11434/api/embed -d '{"model": "nomic-embed-text-v2", "keep_alive": -1}'
+```
+
+若不使用keep_alive=-1，在一段時間未被使用後，ollama會自行將其offload。
+
+
+
+### Configuration
+
+```
+LLM_API_KEY = "1234"
+LLM_MODEL = "mistral/Devstral-Small-2507"
+LLM_PROVIDER = "ollama"
+LLM_ENDPOINT = "http://host.docker.internal:8080/v1"
+EMBEDDING_PROVIDER = "ollama"
+EMBEDDING_MODEL = "nomic-embed-text-v2"
+EMBEDDING_ENDPOINT = "http://host.docker.internal:11434/api/embeddings"
+EMBEDDING_DIMENSIONS = 768
+EMBEDDING_MAX_TOKENS = 512
+HUGGINGFACE_TOKENIZER = "nomic-ai/nomic-embed-text-v2-moe"
+```
+
+重點是
+
+1. EMBEDDING_ENDPOINT = "http://host.docker.internal:11434/api/embeddings"
+2. HUGGINGFACE_TOKENIZER = "nomic-ai/nomic-embed-text-v2-moe"
+
+其他算簡單易懂。
+
