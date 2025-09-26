@@ -1,0 +1,60 @@
+model_list:
+  - model_name: llama
+    litellm_params:
+      model: openai/llama
+      api_key: abcd
+      api_base: http://host.docker.internal:8080/v1
+    model_info:
+      supports_function_calling: True
+      supports_reasoning: True
+  - model_name: embed
+    litellm_params:
+      model: openai/embed
+      api_base: http://host.docker.internal:9080/v1
+    model_info:
+      mode: embedding
+  - model_name: nomic-embed-text-v2-moe
+    litellm_params:
+      model: openai/embed
+      api_base: http://host.docker.internal:9080/v1
+    model_info:
+      mode: embedding
+  - model_name: ollama2
+    litellm_params:
+      model: ollama/gpt-oss:20b
+      keep_alive: -1m
+      api_key: abcd
+      api_base: http://host.docker.internal:11434
+    model_info:
+      supports_function_calling: true
+  - model_name: ollama
+    litellm_params:
+      model: ollama_chat/devstral:24b
+      api_key: abcd
+      api_base: http://host.docker.internal:11434
+  - model_name: onomic
+    litellm_params:
+      model: ollama/nomic-embed-text-v2:latest
+      api_key: abcd
+      api_base: http://host.docker.internal:11434
+  - model_name: ollama/*
+    litellm_params:
+      model: ollama/*
+      api_key: os.environ/OLLAM_API_KEY
+      api_base: http://host.docker.internal:11434
+
+litellm_settings:
+  set_verbose: False
+
+general_settings: 
+  #master_key: sk-1234 # [OPTIONAL] Use to enforce auth on proxy. See - https://docs.litellm.ai/docs/proxy/virtual_keys
+  completion_model: openai/llama
+  store_model_in_db: False
+  proxy_budget_rescheduler_min_time: 60
+  proxy_budget_rescheduler_max_time: 64
+  proxy_batch_write_at: 60
+  database_connection_pool_limit: 10
+  disable_error_logs: True
+  allow_requests_on_db_unavailable: True
+  max_parallel_requests: 2
+  # database_url: "postgresql://<user>:<password>@<host>:<port>/<dbname>" # [OPTIONAL] use for token-based auth to proxy
